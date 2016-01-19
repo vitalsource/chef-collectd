@@ -1,25 +1,5 @@
 include_recipe 'collectd-ng::_service'
 
-# treat the graphite plugin specially: set address from search or attributes
-if node["collectd"]["plugins"].key?("write_graphite")
-  if node["collectd"]["graphite_ipaddress"].empty?
-    if Chef::Config[:solo]
-      Chef::Application.fatal!("Graphite plugin enabled but no Graphite server configured.")
-    end
-    graphite_server_results = search(:node, "roles:#{node["collectd"]["graphite_role"]} AND chef_environment:#{node.chef_environment}")
-
-    if graphite_server_results.empty?
-      Chef::Application.fatal!("Graphite plugin enabled but no Graphite server found.")
-    else
-      node.default["collectd"]["plugins"]["write_graphite"]["config"]["Host"] = graphite_server_results[0]["ipaddress"]
-    end
-  else
-    node.default["collectd"]["plugins"]["write_graphite"]["config"]["Host"] = node["collectd"]["graphite_ipaddress"]
-  end
-
-  node.default["collectd"]["plugins"]["write_graphite"]["config"]["Port"] = 2003
-end
-
 # flush all of configuration to conf.d/
 node["collectd"]["plugins"].each_pair do |plugin_key, definition|
   # Graphite auto-discovery
